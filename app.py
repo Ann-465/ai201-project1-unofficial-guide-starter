@@ -26,16 +26,26 @@ except ImportError:
 # ── Import generation layer ───────────────────────────────────────────────────
 try:
     from query import ask
-    from embed_and_retrieve import load_store
+    from retrieval import load_store
 except ImportError as e:
     print(f"❌  Could not import project modules: {e}")
-    print("    Make sure query.py and embed_and_retrieve.py are in the same directory.")
+    print("    Make sure query.py and retrieval.py are in the same directory.")
     sys.exit(1)
 
 # ── Load vector store once at startup ────────────────────────────────────────
-print("Loading vector store...")
-load_store()
-print("Ready.")
+_store_loaded = False
+
+def _ensure_store():
+    global _store_loaded
+    if not _store_loaded:
+        print("Loading vector store...")
+        try:
+            load_store()
+            _store_loaded = True
+            print("✓ Vector store loaded.")
+        except Exception as e:
+            print(f"❌ Failed to load vector store: {e}")
+            raise
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -51,6 +61,7 @@ def handle_query(question: str):
       sources_text  — bullet list of source documents
       debug_text    — retrieval details (distances, source IDs)
     """
+    _ensure_store()  # Load vector store on first query
     question = question.strip()
     if not question:
         return (
@@ -179,8 +190,17 @@ with gr.Blocks(title="RowdyHacks Unofficial Guide") as demo:
 # ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        show_error=True,
-    )
+    import os
+    port = int(os.getenv("GRADIO_SERVER_PORT", 7860))
+    print(f"Launching Gradio interface on port {port}...")
+    try:
+        demo.launch(
+            server_name="127.0.0.1",
+            server_port=port,
+            show_error=True,
+            share=False,
+        )
+    except OSError as e:
+        print(f"✗ Port {port} unavailable: {e}")
+        print(f"Try:  GRADIO_SERVER_PORT=7861 python app.py")
+        raise

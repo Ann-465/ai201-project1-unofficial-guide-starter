@@ -1,10 +1,10 @@
 """
 query.py — Generation layer for the RowdyHacks RAG system
 ----------------------------------------------------------
-This module is the bridge between retrieval (embed_and_retrieve.py) and
+This module is the bridge between retrieval (retrieval.py) and
 the user interface (app.py). It:
 
-  1. Retrieves the top-k chunks for a question via embed_and_retrieve.retrieve()
+  1. Retrieves the top-k chunks for a question via retrieval.retrieve()
   2. Builds a grounding prompt that passes those chunks as context
   3. Calls the Groq LLM (llama-3.3-70b-versatile) to generate an answer
   4. Programmatically appends source attribution — never leaves it to the LLM
@@ -36,10 +36,10 @@ load_dotenv()
 
 # ── Import retrieval layer ────────────────────────────────────────────────────
 try:
-    from embed_and_retrieve import load_store, retrieve
+    from retrieval import load_store, retrieve
 except ImportError as e:
-    print(f"❌  Could not import embed_and_retrieve.py: {e}")
-    print("    Make sure embed_and_retrieve.py is in the same directory.")
+    print(f"❌  Could not import retrieval.py: {e}")
+    print("    Make sure retrieval.py is in the same directory.")
     sys.exit(1)
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ TEMPERATURE    = 0.2    # low = more faithful to context, less creative
 #   effectively disabled when TF-IDF is active — the LLM grounding instruction
 #   handles out-of-scope questions instead.
 try:
-    from embed_and_retrieve import USE_NEURAL as _USE_NEURAL
+    from retrieval import USE_NEURAL as _USE_NEURAL
     MAX_USEFUL_DISTANCE = 0.75 if _USE_NEURAL else 0.999
 except ImportError:
     MAX_USEFUL_DISTANCE = 0.75
